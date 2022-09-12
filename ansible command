@@ -1,0 +1,2 @@
+ansible-playbook -i /opt/scripts/RBF_Ansible/inventories/booksvcs.yml -i /opt/scripts/RBF_Ansible/inventories/mtbagsapi.yml -l booksvcs_qa,mtbagsapi_qa -e "variable_host=all" /opt/scripts/RBF_Ansible/system_patching.yml --vault-password-file "~/.vault-env"
+This command will patch the servers that listed in the inventory files.
