@@ -1,0 +1,47 @@
+---
+- hosts: "{{ variable_host | default('booksvcs_dev') }}"
+  become_method: sudo
+
+  tasks:
+  - name: reboot server
+    reboot:
+    become: yes
+
+  - name: PING the servers by performing an ssh connection
+    ping:
+    
+  - name:  restarting docker on all internal the nodes 
+    command: systemctl restart docker
+    become: yes
+    when: inventory_hostname in groups['all_internal'] 
+
+  #- name: Start a container #the container state will remain up and running
+  #  docker_container:
+  #  name: container
+  # state: started
+  #  when: inventory_hostname in groups['all_internal']
+
+  #- name:  restarting docker containers on all internal the nodes 
+  # command: docker restart $(docker ps -a -q)
+  # become: yes
+  #  when: inventory_hostname in groups['all_internal']
+
+  - name: Pause for {{ patch_wait_time }} seconds to wait for {{ application }} to start up
+    pause:
+      seconds: "{{ patch_wait_time }}"
+
+  - name: Wait until HTTP status is 200
+    uri:
+      url: "{{ patch_localhost_url }}"
+      return_content: true
+      validate_certs: false
+      status_code:
+        - 200
+    until: uri_output.status == 200
+    retries: "{{ num_retries }}" # Number of retries determined by num_retries * delaytimer = <time in seconds>
+    delay: "{{ delaytimer }}" # Every X seconds
+    register: uri_output
+
+  - name: Output the returned results from appConfig
+    debug:
+      msg: "{{ uri_output }}"
